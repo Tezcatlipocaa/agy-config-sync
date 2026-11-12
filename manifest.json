@@ -1,0 +1,31 @@
+{
+  "$schema": "manifest-schema.json",
+  "version": "1.0.0",
+  "description": "Master declarative manifest of Antigravity CLI configuration",
+  "levels": {
+    "A": "Direct copy verbatim (lightweight plugins and configs without machine paths)",
+    "B": "Git upstream with pinned SHA + overlay of local modifications",
+    "C": "Machine-adapted templates (environment variables, local home paths, trusted workspaces)",
+    "D": "Excluded from sync (OAuth tokens, installation_id, caches, local session databases)"
+  },
+  "items": [
+    {
+      "id": "gemini:gemini-md",
+      "level": "A",
+      "source": "copy/GEMINI.md",
+      "target": "{{GEMINI_HOME}}/GEMINI.md"
+    },
+    {
+      "id": "gemini:config-json",
+      "level": "A",
+      "source": "copy/config/config.json",
+      "target": "{{GEMINI_CONFIG}}/config.json"
+    },
+    {
+      "id": "file:settings-json",
+      "level": "C",
+      "template": "templates/settings.json.tmpl",
+      "target": "{{GEMINI_CLI}}/settings.json"
+    }
+  ]
+}

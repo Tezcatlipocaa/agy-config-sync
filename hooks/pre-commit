@@ -1,0 +1,37 @@
+#!/usr/bin/env sh
+# ==============================================================================
+# agy-config-sync pre-commit hook (Zero-Leak Guardian)
+# Dynamically blocks secrets, API keys, and personal home paths without hardcoded usernames.
+# ==============================================================================
+
+echo "[PRE-COMMIT] Scanning staged changes for secrets and personal paths..."
+
+# 1. Detect common API key patterns (OpenAI, Context7, GitHub, Google, Bearer tokens)
+PATTERNS="sk-[a-zA-Z0-9]{20,}|ctx7sk-[a-zA-Z0-9_-]{10,}|ghp_[a-zA-Z0-9]{20,}|AIza[0-9A-Za-z-_]{35}|Bearer[[:space:]]+[a-zA-Z0-9._-]{15,}"
+SECRET_LEAKS=$(git diff --cached | grep -iE "^\+[[:space:]]*.*($PATTERNS)" | grep -v 'hooks/pre-commit')
+if [ -n "$SECRET_LEAKS" ]; then
+    echo "=========================================================="
+    echo "ERROR: Potential API key or secret token detected in staged diff:"
+    echo "$SECRET_LEAKS"
+    echo "Commit aborted. Please move secrets to .env.local"
+    echo "=========================================================="
+    exit 1
+fi
+
+# 2. Detect local user home paths dynamically (e.g. C:\Users\<user> or /Users/<user> or /home/<user>)
+CURRENT_USER="${USER:-${USERNAME}}"
+if [ -n "$CURRENT_USER" ] && [ "$CURRENT_USER" != "runner" ] && [ "$CURRENT_USER" != "root" ]; then
+    USER_PATH_PATTERN="[\\\\/](Users|home)[\\\\/]$CURRENT_USER"
+    HOME_LEAKS=$(git diff --cached | grep -iE "^\+[[:space:]]*.*($USER_PATH_PATTERN)" | grep -v 'hooks/pre-commit')
+    if [ -n "$HOME_LEAKS" ]; then
+        echo "=========================================================="
+        echo "ERROR: Personal absolute home path for user '$CURRENT_USER' detected:"
+        echo "$HOME_LEAKS"
+        echo "Commit aborted. Use template tokens like {{GEMINI_HOME}} or {{GEMINI_CONFIG}} instead."
+        echo "=========================================================="
+        exit 1
+    fi
+fi
+
+echo "[PRE-COMMIT] Security audit passed cleanly."
+exit 0
