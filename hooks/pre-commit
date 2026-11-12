@@ -7,8 +7,8 @@
 echo "[PRE-COMMIT] Scanning staged changes for secrets and personal paths..."
 
 # 1. Detect common API key patterns (OpenAI, Context7, GitHub, Google, Bearer tokens)
-PATTERNS="sk-[a-zA-Z0-9]{20,}|ctx7sk-[a-zA-Z0-9_-]{10,}|ghp_[a-zA-Z0-9]{20,}|AIza[0-9A-Za-z-_]{35}|Bearer[[:space:]]+[a-zA-Z0-9._-]{15,}"
-SECRET_LEAKS=$(git diff --cached | grep -iE "^\+[[:space:]]*.*($PATTERNS)" | grep -v 'hooks/pre-commit')
+PATTERNS="sk-[a-zA-Z0-9]{20,}|ctx7sk-[a-zA-Z0-9_]{10,}|ghp_[a-zA-Z0-9]{20,}|AIza[0-9A-Za-z_-]{35}|Bearer[[:space:]]+[a-zA-Z0-9._-]{15,}"
+SECRET_LEAKS=$(git diff --cached | grep -iE "^\+[[:space:]]*.*($PATTERNS)" | grep -v 'hooks/pre-commit' || true)
 if [ -n "$SECRET_LEAKS" ]; then
     echo "=========================================================="
     echo "ERROR: Potential API key or secret token detected in staged diff:"
